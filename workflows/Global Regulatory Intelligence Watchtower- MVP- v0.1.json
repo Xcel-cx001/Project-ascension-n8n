@@ -1,0 +1,451 @@
+{
+  "name": "Global Regulatory Intelligence Watchtower- MVP",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1728,
+        -432
+      ],
+      "id": "daaa1175-4714-4678-b7d6-030de6daa75a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.federalregister.gov/api/v1/documents.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "conditions[type][]",
+              "value": "RULE"
+            },
+            {
+              "name": "per_page",
+              "value": "5"
+            },
+            {
+              "name": "order",
+              "value": "newest"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1440,
+        -432
+      ],
+      "id": "9dd5a730-630a-462b-87f5-4636763407dc",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1728,
+        -144
+      ],
+      "id": "7c66743e-17ac-4695-8bec-43584e59c8eb",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d096b7d-327d-48a6-8ddd-cc66b4a0348b",
+              "name": "title",
+              "value": "={{$json.title}}",
+              "type": "string"
+            },
+            {
+              "id": "59d16e52-2972-4649-a86c-e794fa6d31cd",
+              "name": "abstract",
+              "value": "={{$json.abstract}}",
+              "type": "string"
+            },
+            {
+              "id": "9d14d3be-2ffa-4157-b0d2-58188e4480d8",
+              "name": "publication_date",
+              "value": "={{$json.publication_date}}",
+              "type": "string"
+            },
+            {
+              "id": "e758984b-80b7-4daa-8b35-8b7ec5f5168d",
+              "name": "agency",
+              "value": "={{$json.agencies[0].name}}",
+              "type": "string"
+            },
+            {
+              "id": "e3982d7e-cb61-4d72-a9f3-32882fc6306a",
+              "name": "document_number",
+              "value": "={{$json.document_number}}",
+              "type": "string"
+            },
+            {
+              "id": "faea76a0-80df-445c-bd97-981146449d59",
+              "name": "html_url",
+              "value": "={{$json.html_url}}",
+              "type": "string"
+            },
+            {
+              "id": "e479d1fa-68c6-47ba-8988-a6059d314504",
+              "name": "pdf_url",
+              "value": "={{$json.pdf_url}}",
+              "type": "string"
+            },
+            {
+              "id": "dfd7beab-62b8-4796-be71-1fcfb2516ead",
+              "name": "type",
+              "value": "={{$json.type}}",
+              "type": "string"
+            },
+            {
+              "id": "3672e54c-85b4-40b3-86ea-d53ba5243670",
+              "name": "excerpt",
+              "value": "={{$json.excerpts}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1440,
+        -144
+      ],
+      "id": "30d2ea8b-3cfb-4a42-b35e-4c2db10d20ef",
+      "name": "Normalize Document"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n\n  const d = item.json;\n\n  const systemPrompt = [\n    \"You are an Institutional Regulatory Intelligence Analyst.\",\n    \"Analyze the regulatory document supplied by the user.\",\n    \"\",\n    \"Return ONLY one valid JSON object.\",\n    \"Do not return Markdown.\",\n    \"Do not use code fences.\",\n    \"Do not add commentary outside the JSON.\",\n    \"Do not invent facts.\",\n    \"Base the analysis only on the supplied document information.\",\n    \"\",\n    \"The JSON must contain exactly these top-level fields:\",\n    \"\",\n    \"document_metadata\",\n    \"risk_classification\",\n    \"impact_assessment\",\n    \"risk_flags\",\n    \"\",\n    \"document_metadata must contain:\",\n    \"title\",\n    \"issuing_agency\",\n    \"document_number\",\n    \"publication_date\",\n    \"document_type\",\n    \"\",\n    \"risk_classification must contain:\",\n    \"regulatory_risk_level\",\n    \"enforcement_probability\",\n    \"monitoring_priority\",\n    \"\",\n    \"impact_assessment must contain:\",\n    \"regulatory_burden\",\n    \"economic_impact\",\n    \"compliance_significance\",\n    \"urgency\",\n    \"overall_severity\",\n    \"\",\n    \"risk_flags must be an array of concise strings.\",\n    \"\",\n    \"Allowed regulatory_risk_level values:\",\n    \"Low, Moderate, High\",\n    \"\",\n    \"Allowed enforcement_probability values:\",\n    \"Low, Moderate, High\",\n    \"\",\n    \"Allowed monitoring_priority values:\",\n    \"Routine, Monitor, High\",\n    \"\",\n    \"Allowed overall_severity values:\",\n    \"Low, Moderate, Moderate to High, High\",\n    \"\",\n    \"If the document does not provide enough information to determine a value, return an empty string.\",\n    \"Do not infer unsupported facts.\"\n  ].join(\"\\n\");\n\n  const userPrompt = [\n    \"Analyze this regulatory document:\",\n    \"\",\n    \"TITLE:\",\n    String(d.title || \"\"),\n    \"\",\n    \"AGENCY:\",\n    String(d.agency || \"\"),\n    \"\",\n    \"DOCUMENT NUMBER:\",\n    String(d.document_number || \"\"),\n    \"\",\n    \"PUBLICATION DATE:\",\n    String(d.publication_date || \"\"),\n    \"\",\n    \"DOCUMENT TYPE:\",\n    String(d.type || \"\"),\n    \"\",\n    \"ABSTRACT:\",\n    String(d.abstract || \"\"),\n    \"\",\n    \"SOURCE URL:\",\n    String(d.html_url || \"\"),\n    \"\",\n    \"PDF URL:\",\n    String(d.pdf_url || \"\"),\n    \"\",\n    \"Return the required JSON object.\"\n  ].join(\"\\n\");\n\n  return {\n    json: {\n      model: \"kimi-k3\",\n      messages: [\n        {\n          role: \"system\",\n          content: systemPrompt\n        },\n        {\n          role: \"user\",\n          content: userPrompt\n        }\n      ],\n      stream: false\n    }\n  };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        -432
+      ],
+      "id": "4ca6c4cc-a60d-4cfb-860a-7733807bfc28",
+      "name": "Prepare Kimi Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.moonshot.ai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-qqvDKswuVpaUEmo4awH8ovtdDCqmP5UkR2p6M6yw0TrpI60w"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -944,
+        -432
+      ],
+      "id": "4da781b9-ab2b-4697-b972-ebd0885c294e",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item) => {\n  const data = item.json;\n\n  const metadata = data.document_metadata || {};\n  const risk = data.risk_classification || {};\n  const impact = data.impact_assessment || {};\n  const dra = data.deterministic_risk_assessment || {};\n\n  const title = metadata.title || \"Untitled regulatory document\";\n  const agency = metadata.issuing_agency || \"Unknown agency\";\n  const documentNumber = metadata.document_number || \"Unknown\";\n  const publicationDate = metadata.publication_date || \"Unknown\";\n  const documentType = metadata.document_type || \"Unknown\";\n\n  const regulatoryRisk =\n    risk.regulatory_risk_level || dra.risk_basis?.regulatory_risk_level || \"Unknown\";\n\n  const enforcementProbability =\n    risk.enforcement_probability || dra.risk_basis?.enforcement_probability || \"Unknown\";\n\n  const monitoringPriority =\n    risk.monitoring_priority || \"Unknown\";\n\n  const riskScore =\n    dra.risk_score ?? \"Unknown\";\n\n  const maximumScore =\n    dra.maximum_score ?? \"Unknown\";\n\n  const severity =\n    dra.deterministic_severity || \"Unknown\";\n\n  const regulatoryBurden =\n    dra.risk_basis?.regulatory_burden ||\n    impact.regulatory_burden ||\n    \"Unknown\";\n\n  const economicImpact =\n    impact.economic_impact || \"Unknown\";\n\n  const complianceSignificance =\n    impact.compliance_significance || \"Unknown\";\n\n  const urgency =\n    impact.urgency || \"Unknown\";\n\n  const alertMessage = [\n    `🚨 REGULATORY ALERT`,\n    ``,\n    `Severity: ${severity}`,\n    `Risk Score: ${riskScore}/${maximumScore}`,\n    ``,\n    `📄 ${title}`,\n    ``,\n    `Issuing Agency: ${agency}`,\n    `Document No.: ${documentNumber}`,\n    `Document Type: ${documentType}`,\n    `Publication Date: ${publicationDate}`,\n    ``,\n    `RISK CLASSIFICATION`,\n    `Regulatory Risk: ${regulatoryRisk}`,\n    `Enforcement Probability: ${enforcementProbability}`,\n    `Monitoring Priority: ${monitoringPriority}`,\n    ``,\n    `IMPACT`,\n    `Regulatory Burden: ${regulatoryBurden}`,\n    `Economic Impact: ${economicImpact}`,\n    `Compliance Significance: ${complianceSignificance}`,\n    `Urgency: ${urgency}`,\n    ``,\n    `Action: Review applicability and assess potential operational impact.`\n  ].join(\"\\n\");\n\n  return {\n    json: {\n      ...data,\n      alert_message: alertMessage,\n      alert_metadata: {\n        title,\n        agency,\n        document_number: documentNumber,\n        publication_date: publicationDate,\n        severity,\n        risk_score: riskScore,\n        maximum_score: maximumScore,\n        regulatory_risk_level: regulatoryRisk,\n        enforcement_probability: enforcementProbability,\n        monitoring_priority: monitoringPriority\n      }\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -432
+      ],
+      "id": "05350ef5-359a-4095-a144-7c935c97d476",
+      "name": "Prepare Alert"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item) => {\n  const content = item.json?.choices?.[0]?.message?.content;\n\n  if (content === undefined || content === null) {\n    throw new Error(\"Kimi response content is missing.\");\n  }\n\n  let data;\n\n  if (typeof content === \"object\") {\n    data = content;\n  } else {\n    let text = String(content).trim();\n\n    // Remove Markdown code fences if present\n    if (text.startsWith(\"```\")) {\n      text = text.replace(/^```(?:json)?\\s*/i, \"\");\n      text = text.replace(/\\s*```$/i, \"\");\n      text = text.trim();\n    }\n\n    try {\n      data = JSON.parse(text);\n    } catch (error) {\n      throw new Error(\"Kimi returned invalid JSON.\");\n    }\n  }\n\n  // Ensure the structures expected by downstream nodes exist.\n  if (!data.document_metadata) {\n    data.document_metadata = {};\n  }\n\n  if (!data.risk_classification) {\n    data.risk_classification = {};\n  }\n\n  if (!data.impact_assessment) {\n    data.impact_assessment = {};\n  }\n\n  if (!Array.isArray(data.risk_flags)) {\n    data.risk_flags = [];\n  }\n\n  // Keep Kimi's actual values.\n  // Do NOT force Low/High values here.\n\n  return {\n    json: data\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        -240
+      ],
+      "id": "699b7f31-6da5-4f1e-acc7-26de6c689139",
+      "name": "Nomalize kimi response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst allowedRiskLevels = [\"Low\", \"Moderate\", \"High\"];\nconst allowedEnforcement = [\"Low\", \"Moderate\", \"High\"];\nconst allowedPriority = [\"Routine\", \"Monitor\", \"High\"];\n\nreturn items.map((item, index) => {\n  const data = item.json;\n\n  const errors = [];\n\n  // Required top-level objects\n  if (!data.document_metadata || typeof data.document_metadata !== \"object\") {\n    errors.push(\"Missing document_metadata\");\n  }\n\n  if (!data.risk_classification || typeof data.risk_classification !== \"object\") {\n    errors.push(\"Missing risk_classification\");\n  }\n\n  if (!data.impact_assessment || typeof data.impact_assessment !== \"object\") {\n    errors.push(\"Missing impact_assessment\");\n  }\n\n  if (!Array.isArray(data.risk_flags)) {\n    errors.push(\"risk_flags must be an array\");\n  }\n\n  // Document metadata validation\n  if (data.document_metadata) {\n    const requiredMetadata = [\n      \"title\",\n      \"issuing_agency\",\n      \"publication_date\",\n      \"document_number\",\n      \"document_type\"\n    ];\n\n    for (const field of requiredMetadata) {\n      if (\n        typeof data.document_metadata[field] !== \"string\" ||\n        data.document_metadata[field].trim() === \"\"\n      ) {\n        errors.push(`Missing document_metadata.${field}`);\n      }\n    }\n  }\n\n  // Risk classification validation\n  if (data.risk_classification) {\n    const risk = data.risk_classification;\n\n    if (!allowedRiskLevels.includes(risk.regulatory_risk_level)) {\n      errors.push(\"Invalid regulatory_risk_level\");\n    }\n\n    if (!allowedEnforcement.includes(risk.enforcement_probability)) {\n      errors.push(\"Invalid enforcement_probability\");\n    }\n\n    if (!allowedPriority.includes(risk.monitoring_priority)) {\n      errors.push(\"Invalid monitoring_priority\");\n    }\n  }\n\n  const valid = errors.length === 0;\n\n  return {\n    json: {\n      ...data,\n      validation: {\n        valid,\n        errors,\n        checked_at: new Date().toISOString()\n      }\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        -128
+      ],
+      "id": "c9a48dd6-c9e1-4ca9-8e17-63d197c2e959",
+      "name": "Validate Kimi Schema"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2110e0a7-0b01-4c57-9569-578eff6a921e",
+              "leftValue": "={{ $json.deterministic_risk_assessment.alert_required }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -672,
+        -240
+      ],
+      "id": "4cc48e9c-9388-4e4f-a30a-a2f2ef22002d",
+      "name": "Priority Gate"
+    },
+    {
+      "parameters": {
+        "chatId": "1602128470",
+        "text": "={{ $json.alert_message }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        -432
+      ],
+      "id": "2dc39855-f7ff-4db6-8e65-ddb1d784874d",
+      "name": "Send a text message",
+      "webhookId": "5d3a1af0-0ea4-414c-bcdc-5def719b1574",
+      "credentials": {
+        "telegramApi": {
+          "id": "V7cQqrqruf9Bv3yz",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalize(value) {\n  if (value === null || value === undefined) {\n    return '';\n  }\n\n  return String(value).trim().toLowerCase();\n}\n\nfunction score(value) {\n  var v = normalize(value);\n\n  if (\n    v === '' ||\n    v === 'unknown' ||\n    v === 'not provided' ||\n    v === 'n/a' ||\n    v === 'none'\n  ) {\n    return 0;\n  }\n\n  if (\n    v.indexOf('critical') !== -1 ||\n    v.indexOf('very high') !== -1 ||\n    v.indexOf('severe') !== -1\n  ) {\n    return 4;\n  }\n\n  if (\n    v.indexOf('high') !== -1 ||\n    v.indexOf('significant') !== -1\n  ) {\n    return 3;\n  }\n\n  if (\n    v.indexOf('medium') !== -1 ||\n    v.indexOf('moderate') !== -1\n  ) {\n    return 2;\n  }\n\n  if (\n    v.indexOf('low') !== -1 ||\n    v.indexOf('minimal') !== -1\n  ) {\n    return 1;\n  }\n\n  return 0;\n}\n\nfunction burdenScore(value) {\n  var v = normalize(value);\n\n  if (v === '') {\n    return 0;\n  }\n\n  if (\n    v.indexOf('substantial increase') !== -1 ||\n    v.indexOf('major increase') !== -1 ||\n    v.indexOf('significantly increased') !== -1\n  ) {\n    return 4;\n  }\n\n  if (\n    v.indexOf('increased') !== -1 ||\n    v.indexOf('additional burden') !== -1 ||\n    v.indexOf('new requirement') !== -1 ||\n    v.indexOf('higher burden') !== -1\n  ) {\n    return 3;\n  }\n\n  if (\n    v.indexOf('moderate') !== -1 ||\n    v.indexOf('some increase') !== -1\n  ) {\n    return 2;\n  }\n\n  if (\n    v.indexOf('reduced') !== -1 ||\n    v.indexOf('decreased') !== -1 ||\n    v.indexOf('streamlined') !== -1\n  ) {\n    return 1;\n  }\n\n  return score(v);\n}\n\nfunction economicScore(value) {\n  var v = normalize(value);\n\n  if (v === '') {\n    return 0;\n  }\n\n  if (\n    v.indexOf('major') !== -1 ||\n    v.indexOf('severe') !== -1 ||\n    v.indexOf('very high') !== -1\n  ) {\n    return 4;\n  }\n\n  if (\n    v.indexOf('significant') !== -1 ||\n    v.indexOf('high') !== -1\n  ) {\n    return 3;\n  }\n\n  if (\n    v.indexOf('moderate') !== -1 ||\n    v.indexOf('medium') !== -1\n  ) {\n    return 2;\n  }\n\n  if (\n    v.indexOf('low') !== -1 ||\n    v.indexOf('minimal') !== -1\n  ) {\n    return 1;\n  }\n\n  return 0;\n}\n\nreturn items.map(function(item) {\n\n  var data = item.json || {};\n\n  var risk = data.risk_classification || {};\n  var impact = data.impact_assessment || {};\n\n  var regulatoryRiskLevel =\n    risk.regulatory_risk_level || 'Unknown';\n\n  var enforcementProbability =\n    risk.enforcement_probability || 'Unknown';\n\n  var regulatoryBurden =\n    impact.regulatory_burden || 'Unknown';\n\n  var economicImpact =\n    impact.economic_impact || 'Unknown';\n\n  var complianceSignificance =\n    impact.compliance_significance || 'Unknown';\n\n  var urgency =\n    impact.urgency || 'Unknown';\n\n  var regulatoryRisk =\n    score(regulatoryRiskLevel);\n\n  var enforcement =\n    score(enforcementProbability);\n\n  var burden =\n    burdenScore(regulatoryBurden);\n\n  var economic =\n    economicScore(economicImpact);\n\n  var compliance =\n    score(complianceSignificance);\n\n  var urgencyScore =\n    score(urgency);\n\n  var riskScore =\n    regulatoryRisk +\n    enforcement +\n    burden +\n    economic +\n    compliance +\n    urgencyScore;\n\n  var deterministicSeverity = 'Low';\n\n  if (riskScore >= 15) {\n    deterministicSeverity = 'Critical';\n  } else if (riskScore >= 11) {\n    deterministicSeverity = 'High';\n  } else if (riskScore >= 6) {\n    deterministicSeverity = 'Medium';\n  }\n\n  var alertRequired =\n    deterministicSeverity === 'Critical' ||\n    deterministicSeverity === 'High';\n\n  item.json.deterministic_risk_assessment = {\n    risk_score: riskScore,\n    maximum_score: 24,\n    deterministic_severity: deterministicSeverity,\n    alert_required: alertRequired,\n\n    risk_basis: {\n      regulatory_risk_level: regulatoryRiskLevel,\n      enforcement_probability: enforcementProbability,\n      regulatory_burden: regulatoryBurden,\n      economic_impact: economicImpact,\n      compliance_significance: complianceSignificance,\n      urgency: urgency\n    },\n\n    component_scores: {\n      regulatory_risk: regulatoryRisk,\n      enforcement_probability: enforcement,\n      regulatory_burden: burden,\n      economic_impact: economic,\n      compliance_significance: compliance,\n      urgency: urgencyScore\n    }\n  };\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -240
+      ],
+      "id": "ce1acd02-8f82-48b4-b17b-f64e5c1c2e04",
+      "name": "DRA (Deterministic Risk Assessment)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Normalize Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Document": {
+      "main": [
+        [
+          {
+            "node": "Prepare Kimi Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Kimi Payload": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Nomalize kimi response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nomalize kimi response": {
+      "main": [
+        [
+          {
+            "node": "Validate Kimi Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Kimi Schema": {
+      "main": [
+        [
+          {
+            "node": "DRA (Deterministic Risk Assessment)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Priority Gate": {
+      "main": [
+        [
+          {
+            "node": "Prepare Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Alert": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DRA (Deterministic Risk Assessment)": {
+      "main": [
+        [
+          {
+            "node": "Priority Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "64a809b9-466d-40e3-94da-ac050f6b24b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4c60f92e4e9d2b40823182deee82422923c8d36940b7c975420b4081e706db3"
+  },
+  "nodeGroups": [],
+  "id": "rBZHjxVF77KM1PN8",
+  "tags": [
+    {
+      "updatedAt": "2026-07-30T17:20:37.006Z",
+      "createdAt": "2026-07-30T17:20:37.006Z",
+      "id": "FCO13jx4hEAhJr2E",
+      "name": "Production"
+    },
+    {
+      "updatedAt": "2026-07-30T17:20:55.246Z",
+      "createdAt": "2026-07-30T17:20:55.246Z",
+      "id": "PnmlCrCgsCJxLAKn",
+      "name": "AI Ops"
+    },
+    {
+      "updatedAt": "2026-07-30T17:20:46.600Z",
+      "createdAt": "2026-07-30T17:20:46.600Z",
+      "id": "VsdW9c125pfwxK76",
+      "name": "Regulatory"
+    }
+  ]
+}
