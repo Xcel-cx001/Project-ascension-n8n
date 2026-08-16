@@ -1,0 +1,652 @@
+{
+  "name": "AI Regulatory Document Intelligence & Compliance Mapping",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f1723506-e510-44d1-bf34-edb2f305d75c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1232,
+        112
+      ],
+      "id": "ed803592-7106-4475-9a56-5f1dac8fd8b5",
+      "name": "Webhook",
+      "webhookId": "f1723506-e510-44d1-bf34-edb2f305d75c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9bc192f2-c345-4db6-9fd8-b069d9db0145",
+              "name": "intake_id ",
+              "value": "={{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "e989d474-2710-4bba-ac3f-c2ff46a62f2d",
+              "name": "document_name",
+              "value": "={{ $json.body.document_name }}",
+              "type": "string"
+            },
+            {
+              "id": "4f0edcc9-7e59-435f-8de7-9b113c6fdad3",
+              "name": "source",
+              "value": "={{ $json.body.source }}",
+              "type": "string"
+            },
+            {
+              "id": "74aefe46-47f8-4bd6-9388-42549c591b18",
+              "name": "source_url",
+              "value": "={{ $json.body.source_url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ee16bfbd-ec10-459a-b1c6-0cd4b9fc5673",
+              "name": "jurisdiction",
+              "value": "={{ $json.body.jurisdiction }}",
+              "type": "string"
+            },
+            {
+              "id": "44b56a8a-cf7b-436a-afbf-b1846e72e98c",
+              "name": "document_type",
+              "value": "={{ $json.body.document_type }}",
+              "type": "string"
+            },
+            {
+              "id": "72f0a48c-f625-49ca-9eb4-016b0a09d2fa",
+              "name": "recieved_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "882f5bfe-f2aa-4ac0-a850-a98207241ce7",
+              "name": "processing _status",
+              "value": "received",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1216,
+        -96
+      ],
+      "id": "57c012d4-2c41-4683-a6ef-0d600522e287",
+      "name": "Normalize Document Intake"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4fb3aaf8-5689-4cae-8afe-9510b27ce9a5",
+              "leftValue": "={{ $json.document_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "776195c4-a108-4b7e-b612-42a9cd893679",
+              "leftValue": "={{ $json.source }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6b60bfc4-b291-4b24-9f7c-7ef72704cd1b",
+              "leftValue": "={{ $json.document_type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1024,
+        -96
+      ],
+      "id": "2bed8336-e185-43d6-be34-29a45d50c1cd",
+      "name": "Validate Document Intake"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb537cc1-c377-46db-80b7-76916fbeaa43",
+              "name": "validation_status",
+              "value": "invalid",
+              "type": "string"
+            },
+            {
+              "id": "096089a2-d04c-4954-b55a-4e91108ca44a",
+              "name": "validation_error",
+              "value": "required intake fields are missing or invalid",
+              "type": "string"
+            },
+            {
+              "id": "f3bfac38-3718-49a0-afe3-8e3eca0f427d",
+              "name": "validation_failed_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "8eaf7ce4-fe52-4554-9f58-9bdb4c779159",
+              "name": "processing_status",
+              "value": "validation_failed",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -768,
+        304
+      ],
+      "id": "a35508a6-4e3a-4775-9a74-d98fe552a660",
+      "name": "Mark Intake Validation Failed"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9ac79322-959e-4373-af09-776ac189f9ed",
+              "name": "validation_status",
+              "value": "valid",
+              "type": "string"
+            },
+            {
+              "id": "d2da04d4-f324-4550-8d90-00768c52e68d",
+              "name": "validation_passed_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "94f8fa25-8f87-40c8-9c43-60df6a6b20d0",
+              "name": "processing_status",
+              "value": "validated",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -784,
+        -288
+      ],
+      "id": "2ffd4e75-39d3-4fcb-8274-f3a68099f6f1",
+      "name": "Mark Intake Validated"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.source_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "document_html"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -784,
+        -96
+      ],
+      "id": "290ca4ae-d530-4ade-8dd8-eebac57ce753",
+      "name": "Fetch Regulatory Document"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "document_html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "document_text",
+              "cssSelector": "body",
+              "skipSelectors": "script, style, nav, footer"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -784,
+        112
+      ],
+      "id": "528dd496-581e-4cdb-a8b5-bab862a2244d",
+      "name": "Extract Document Text"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -544,
+        -96
+      ],
+      "id": "3c9dc7ed-48f0-4b90-8f53-a9c69f42bd34",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nreturn [\n  {\n    json: {\n      ...item,\n      ai_analysis_status: \"ready\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        -96
+      ],
+      "id": "45a09309-6f95-482c-b442-57e43d8e6690",
+      "name": "Build Canonical Document "
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json, null, 2) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "={{ JSON.stringify($json, null, 2) }}"
+            },
+            {
+              "message": "You are an AI regulatory document intelligence analyst.  Analyze the regulatory document provided in the user message.  Your task is to extract structured regulatory intelligence from the document without inventing facts.  You must:  1. Identify the purpose and subject matter of the document. 2. Summarize the key regulatory requirements, changes, or provisions. 3. Identify specific obligations imposed on regulated entities. 4. Identify affected entities, sectors, or stakeholders. 5. Extract deadlines, effective dates, implementation dates, reporting dates, or other important dates. 6. Identify compliance risks or areas requiring attention. 7. Identify concrete actions an affected organization may need to take. 8. Distinguish clearly between facts explicitly stated in the document and reasonable interpretations. 9. Do not invent regulatory requirements, deadlines, penalties, entities, or legal conclusions that are not supported by the document. 10. If information is not available, return null or an empty array rather than guessing.  Return the analysis as valid JSON only.  Use this structure:  {   \"document_summary\": \"\",   \"key_regulatory_points\": [],   \"obligations\": [],   \"affected_entities\": [],   \"important_dates\": [],   \"compliance_risks\": [],   \"required_actions\": [],   \"interpretation_notes\": [],   \"confidence\": 0 }  The confidence score must be a number from 0 to 1.  Keep extracted facts traceable to the supplied document."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -160,
+        -288
+      ],
+      "id": "a0d8416c-8f16-4b94-874d-57db63ccbef8",
+      "name": "Analyze Regulatory Document"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMoonshot",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        -272
+      ],
+      "id": "9e5ebbb0-c181-41fa-bd5b-fd8c64f9e319",
+      "name": "Moonshot Kimi Chat Model",
+      "credentials": {
+        "moonshotApi": {
+          "id": "VDPsiWiixsETmRIb",
+          "name": "Moonshot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Prefer structured AI analysis if it already exists\nlet analysis = input.ai_analysis;\n\n// Otherwise fall back to raw AI output\nif (analysis === undefined || analysis === null) {\n  analysis = input.ai_analysis_raw;\n}\n\n// Final fallback: some AI nodes expose the response as \"text\"\nif (analysis === undefined || analysis === null) {\n  analysis = input.text;\n}\n\nif (analysis === undefined || analysis === null) {\n  throw new Error(\n    \"No AI analysis found. Expected ai_analysis, ai_analysis_raw, or text.\"\n  );\n}\n\n// Already a JSON object — nothing to parse\nif (typeof analysis === \"object\") {\n  return [{\n    json: {\n      ...input,\n      ai_analysis: analysis\n    }\n  }];\n}\n\n// Convert string response into JSON\nlet raw = String(analysis).trim();\n\n// Remove Markdown JSON fences\nraw = raw.replace(/^```json\\s*/i, \"\");\nraw = raw.replace(/^```\\s*/i, \"\");\nraw = raw.replace(/\\s*```$/i, \"\");\nraw = raw.trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(raw);\n} catch (error) {\n  throw new Error(\n    \"AI analysis could not be parsed as JSON: \" + error.message\n  );\n}\n\nreturn [{\n  json: {\n    ...input,\n    ai_analysis: parsed\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -288
+      ],
+      "id": "462762b3-a49b-4a09-ae84-7cab7b8c5126",
+      "name": "Parse AI Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const document = $input.first().json;\n\nreturn [\n  {\n    json: {\n      ...document,\n      ai_analysis_status: \"ready\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -96
+      ],
+      "id": "1027d2ed-2213-4955-949a-04dc20a8262d",
+      "name": "Prepare Document for AI Analysis "
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n  const analysis = item.json.ai_analysis || {};\n\n  const keyPoints = Array.isArray(analysis.key_regulatory_points)\n    ? analysis.key_regulatory_points\n    : [];\n\n  const obligations = Array.isArray(analysis.obligations)\n    ? analysis.obligations\n    : [];\n\n  const affectedEntities = Array.isArray(analysis.affected_entities)\n    ? analysis.affected_entities\n    : [];\n\n  const importantDates = Array.isArray(analysis.important_dates)\n    ? analysis.important_dates\n    : [];\n\n  const complianceRisks = Array.isArray(analysis.compliance_risks)\n    ? analysis.compliance_risks\n    : [];\n\n  const requiredActions = Array.isArray(analysis.required_actions)\n    ? analysis.required_actions\n    : [];\n\n  const interpretationNotes = Array.isArray(analysis.interpretation_notes)\n    ? analysis.interpretation_notes\n    : [];\n\n  const confidence = Number(analysis.confidence ?? 0);\n\n  // Determine whether there is enough substantive information\n  // to make a compliance assessment.\n  const hasSubstantiveContent =\n    keyPoints.length > 0 ||\n    obligations.length > 0 ||\n    affectedEntities.length > 0 ||\n    complianceRisks.length > 0 ||\n    requiredActions.length > 0;\n\n  let analysisStatus;\n  let riskLevel;\n  let recommendedAction;\n\n  if (!hasSubstantiveContent || confidence === 0) {\n    analysisStatus = \"INSUFFICIENT_SOURCE_DATA\";\n    riskLevel = \"NOT_ASSESSED\";\n    recommendedAction =\n      \"Verify the source document and re-ingest the substantive regulatory text before relying on this analysis.\";\n  } else if (complianceRisks.length > 0 || requiredActions.length > 0) {\n    analysisStatus = \"ACTION_REQUIRED\";\n    riskLevel = \"REVIEW_REQUIRED\";\n    recommendedAction =\n      \"Review identified regulatory obligations, risks and required actions.\";\n  } else if (obligations.length > 0) {\n    analysisStatus = \"COMPLIANCE_REVIEW_REQUIRED\";\n    riskLevel = \"REVIEW_REQUIRED\";\n    recommendedAction =\n      \"Review identified obligations and determine applicable compliance controls.\";\n  } else {\n    analysisStatus = \"NO_MATERIAL_REQUIREMENTS_IDENTIFIED\";\n    riskLevel = \"LOW\";\n    recommendedAction =\n      \"No material compliance requirements were identified by the analysis. Human review remains recommended.\";\n  }\n\n  results.push({\n    json: {\n      ...item.json,\n\n      compliance_mapping: {\n        analysis_status: analysisStatus,\n        risk_level: riskLevel,\n        confidence: confidence,\n\n        regulatory_summary:\n          analysis.document_summary || \"\",\n\n        key_regulatory_points: keyPoints,\n\n        obligations: obligations,\n\n        affected_entities: affectedEntities,\n\n        important_dates: importantDates,\n\n        compliance_risks: complianceRisks,\n\n        required_actions: requiredActions,\n\n        interpretation_notes: interpretationNotes,\n\n        recommended_action: recommendedAction\n      }\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -96
+      ],
+      "id": "b4dab9bc-d143-4ab6-89ea-80d38ed4e0ad",
+      "name": "Compliance Mapping"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n  const data = item.json;\n\n  // Webhook metadata is stored inside body.\n  // Fall back to the root object if the structure changes later.\n  const document = data.body || data;\n\n  const mapping = data.compliance_mapping || {};\n\n  results.push({\n    json: {\n      record_type: \"REGULATORY_COMPLIANCE_ANALYSIS\",\n\n      document: {\n        intake_id: document.intake_id || null,\n        document_name: document.document_name || null,\n        document_type: document.document_type || null,\n        source: document.source || null,\n        source_url: document.source_url || null,\n        jurisdiction: document.jurisdiction || null,\n        received_at: document.received_at || null\n      },\n\n      analysis: {\n        status: mapping.analysis_status || \"UNKNOWN\",\n        risk_level: mapping.risk_level || \"NOT_ASSESSED\",\n        confidence: mapping.confidence ?? 0,\n        summary: mapping.regulatory_summary || \"\"\n      },\n\n      regulatory_intelligence: {\n        key_regulatory_points:\n          mapping.key_regulatory_points || [],\n\n        obligations:\n          mapping.obligations || [],\n\n        affected_entities:\n          mapping.affected_entities || [],\n\n        important_dates:\n          mapping.important_dates || [],\n\n        compliance_risks:\n          mapping.compliance_risks || [],\n\n        required_actions:\n          mapping.required_actions || [],\n\n        interpretation_notes:\n          mapping.interpretation_notes || []\n      },\n\n      decision: {\n        recommended_action:\n          mapping.recommended_action || null\n      },\n\n      processing: {\n        processed_at: new Date().toISOString(),\n        pipeline_status: \"COMPLETED\"\n      }\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -96
+      ],
+      "id": "aa90b18b-284b-48a4-b831-3ff22d3a1f18",
+      "name": "Build Final Compliance Record "
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\n// Find a field anywhere inside the incoming JSON object.\nfunction findField(obj, targetKey) {\n  if (!obj || typeof obj !== 'object') {\n    return undefined;\n  }\n\n  if (Object.prototype.hasOwnProperty.call(obj, targetKey)) {\n    return obj[targetKey];\n  }\n\n  for (const key of Object.keys(obj)) {\n    const value = obj[key];\n\n    if (value && typeof value === 'object') {\n      const found = findField(value, targetKey);\n\n      if (found !== undefined) {\n        return found;\n      }\n    }\n  }\n\n  return undefined;\n}\n\nfunction cleanLabel(value) {\n  if (value === null || value === undefined || value === '') {\n    return 'Not available';\n  }\n\n  return String(value)\n    .replace(/_/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .toUpperCase();\n}\n\nfunction formatList(value) {\n  if (!Array.isArray(value) || value.length === 0) {\n    return 'None identified.';\n  }\n\n  return value.map(item => {\n\n    if (typeof item === 'object' && item !== null) {\n\n      if (item.date && item.description) {\n        return `• ${item.date} — ${item.description}`;\n      }\n\n      if (item.date) {\n        return `• ${item.date}`;\n      }\n\n      return `• ${JSON.stringify(item)}`;\n    }\n\n    return `• ${String(item)\n      .replace(/_/g, ' ')\n      .trim()}`;\n\n  }).join('\\n');\n}\n\nfunction formatConfidence(value) {\n  if (value === null || value === undefined || value === '') {\n    return 'Not available';\n  }\n\n  const number = Number(value);\n\n  if (Number.isNaN(number)) {\n    return String(value);\n  }\n\n  // Our schema uses 0–1.\n  // 0.4 becomes 40%.\n  if (number >= 0 && number <= 1) {\n    return `${Math.round(number * 100)}%`;\n  }\n\n  return `${Math.round(number)}%`;\n}\n\nfor (const item of $input.all()) {\n\n  const data = item.json;\n\n  // Locate fields regardless of their nesting level.\n  const document = findField(data, 'document') || {};\n\n  const status = findField(data, 'status');\n  const riskLevel = findField(data, 'risk_level');\n  const confidence = findField(data, 'confidence');\n\n  const summary = findField(data, 'summary');\n\n  const obligations =\n    findField(data, 'obligations') || [];\n\n  const affectedEntities =\n    findField(data, 'affected_entities') || [];\n\n  const importantDates =\n    findField(data, 'important_dates') || [];\n\n  const complianceRisks =\n    findField(data, 'compliance_risks') || [];\n\n  const requiredActions =\n    findField(data, 'required_actions') || [];\n\n  const decision =\n    findField(data, 'decision') || {};\n\n  const recommendedAction =\n    decision.recommended_action ||\n    findField(data, 'recommended_action') ||\n    'No recommended action provided.';\n\n  const processing =\n    findField(data, 'processing') || {};\n\n  const sourceUrl =\n    document.source_url ||\n    findField(data, 'source_url') ||\n    'No source URL available.';\n\n  const pipelineStatus =\n    processing.pipeline_status ||\n    findField(data, 'pipeline_status') ||\n    'UNKNOWN';\n\n  const alertText = `🚨 REGULATORY INTELLIGENCE ALERT\n\n📄 Document\n${document.document_name || findField(data, 'document_name') || 'Not available'}\n\n🏛️ Source\n${document.source || findField(data, 'source') || 'Not available'}\n\n🌍 Jurisdiction\n${document.jurisdiction || findField(data, 'jurisdiction') || 'Not available'}\n\n📑 Type\n${document.document_type || findField(data, 'document_type') || 'Not available'}\n\n⚠️ Compliance Status\n${cleanLabel(status)}\n\n🔴 Risk Level\n${cleanLabel(riskLevel)}\n\n🎯 Confidence\n${formatConfidence(confidence)}\n\n📝 Summary\n${summary || 'No summary available.'}\n\n📌 Obligations\n${formatList(obligations)}\n\n🏢 Affected Entities\n${formatList(affectedEntities)}\n\n📅 Important Dates\n${formatList(importantDates)}\n\n⚠️ Compliance Risks\n${formatList(complianceRisks)}\n\n✅ Required Actions\n${formatList(requiredActions)}\n\n💡 Recommended Action\n${recommendedAction}\n\n🔗 Source\n${sourceUrl}\n\n⚙️ Pipeline Status\n${cleanLabel(pipelineStatus)}`;\n\n  results.push({\n    json: {\n      ...data,\n      alert_text: alertText\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -96
+      ],
+      "id": "e575a295-d632-48cc-9f2d-7458c37c2fe5",
+      "name": "Format Compliance Alert"
+    },
+    {
+      "parameters": {
+        "chatId": "1602128470",
+        "text": "={{ $json.alert_text }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        -96
+      ],
+      "id": "1682e143-4f81-43ed-b6d7-4b71470ecbeb",
+      "name": "Send a text message",
+      "webhookId": "2136df08-267a-458d-83c0-63e5b6ab1800",
+      "credentials": {
+        "telegramApi": {
+          "id": "V7cQqrqruf9Bv3yz",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        -96
+      ],
+      "id": "0de0d88d-78a8-472e-b275-94b61fd7acbe",
+      "name": "Merge AI Analysis"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Document Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Document Intake": {
+      "main": [
+        [
+          {
+            "node": "Validate Document Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Document Intake": {
+      "main": [
+        [
+          {
+            "node": "Mark Intake Validated",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Intake Validation Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Intake Validated": {
+      "main": [
+        [
+          {
+            "node": "Fetch Regulatory Document",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Regulatory Document": {
+      "main": [
+        [
+          {
+            "node": "Extract Document Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Document Text": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Build Canonical Document ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Canonical Document ": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document for AI Analysis ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Moonshot Kimi Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Regulatory Document",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Regulatory Document": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge AI Analysis",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Prepare Document for AI Analysis ": {
+      "main": [
+        [
+          {
+            "node": "Analyze Regulatory Document",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compliance Mapping": {
+      "main": [
+        [
+          {
+            "node": "Build Final Compliance Record ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Final Compliance Record ": {
+      "main": [
+        [
+          {
+            "node": "Format Compliance Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Compliance Alert": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Compliance Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f58590a1-5181-4629-9b8e-d0451f5285da",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4c60f92e4e9d2b40823182deee82422923c8d36940b7c975420b4081e706db3"
+  },
+  "nodeGroups": [],
+  "id": "pDs1ZXxy6sw7AalN",
+  "tags": []
+}
